@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
 def getLastNPrices(numDays, row, v):
     lastNPrices = np.zeros(numDays)
@@ -73,12 +74,7 @@ def difference(gamma, actions, curState, numDays, action, v, weights):
             if q_prime > max:
                 max = q_prime
     reward = calcReward(curState, next_state)
-    #print([reward, gamma, max, q]) q bad
-    #print(gamma, actions, curState, numDays, action, weights) weights bad
-    #print('MAX=', max)
-    #print (reward + (gamma * max))
-    #print ("Q:  ", q)
-    # print ("total:  ", (reward + (gamma * max)) - q)
+    print('MAX=', max)
     return (reward + (gamma * max)) - q
 
 
@@ -113,7 +109,26 @@ def chooseBestAction(cur_state, weights, actions, v, numDays):
     return best_actions
 
 
+def plotThings(states):
+    x = []
+    y = []
+
+    count = 1
+    for s in states:
+        y.append(s[0][1])
+        x.append(count)
+        count += 1
+
+    plt.plot(x, y)
+    plt.xlabel('episode')
+    plt.ylabel('account')
+    plt.title('Learning Curve')
+    plt.show()
+
+
 def qLearn(alpha, gamma, epsilon, numDays):
+    np.random.seed(50)
+
     data = pd.read_csv("data/GSPC_2011.csv")
     closing_prices = data.loc[:, "Close"]
     v = closing_prices.values
@@ -121,14 +136,14 @@ def qLearn(alpha, gamma, epsilon, numDays):
     weights = np.zeros(numDays + 2)
     weights = weights.tolist()
 
-    for i in range(1, 1001):
-        list = [0, 1000]
+    end_states = []
+
+    for i in range(1, 11):
+        list = [0, 10000]
         betterList = list + (getLastNPrices(numDays, 0, v)).tolist()
         cur_state = (betterList, 1)
         done = False
         while not done:
-            #action = random.choice(chooseBestAction(cur_state, weights, actions, v, numDays))[0]
-
             best_actions = chooseBestAction(cur_state, weights, actions, v, numDays)
             axs = []
             for a in best_actions:
@@ -142,21 +157,19 @@ def qLearn(alpha, gamma, epsilon, numDays):
 
             d = difference(gamma, actions, cur_state, numDays, action, v, weights)
             weights = updateWeights(d, cur_state[0], weights, alpha)
+            print("action: ", action)
 
             cur_state = new_state
             if new_state[1] == len(v) - 2:
                 done = True
         if i % 10 == 0:
             print("Episode: ", i, cur_state[0][1])
+        end_states.append(cur_state)
+    plotThings(end_states)
     return cur_state
 
-print(qLearn(.01, .9, .1, 10))
+print(qLearn(1, .001, .1, 1))
 
-
-
-#print(new_state([2,3,4,5,6,1],([0, 100, 3, 4, 5], 3),"b",3))
-#print(new_state([2,3,4,5,6,1],([0, 100, 3, 4, 5], 3),"h",3))
-#print(new_state([2,3,4,5,6,1],([0, 100, 3, 4, 5], 3),"s",3))
 
 # state: ([numStocks, account_balance, lastNprices], index)
 #state1 = ([0, 1000, 1, 1, 1], 1)
