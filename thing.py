@@ -39,11 +39,8 @@ def qState(features, weights):
 
 #state: [(numStocks, account, prices), index]
 def calcReward(curState, nextState):
-    return ((nextState[0][0] * nextState[0][len(nextState[0]) - 1]) + nextState[0][1]) - ((curState[0][0] * curState[len(curState[0]) - 1]) + curState[0][1])
-
-state1 = ([0, 1000, 1, 1, 1], 1)
-state2 = ([1, 999, 1, 1, 5], 2)
-print(calcReward(state1, state2))
+    return ((nextState[0][0] * nextState[0][len(nextState[0]) - 1]) + nextState[0][1]) \
+           - ((curState[0][0] * curState[0][len(curState[0]) - 1]) + curState[0][1])
 
 
 def difference(gamma, actions, curState, numDays, action, v, weights):
@@ -103,19 +100,22 @@ def qLearn(alpha, gamma, epsilon, numDays):
         cur_state = (betterList, 1)
         done = False
         while not done:
+            if cur_state[0][0] == 0:
+                actions = ['b', 'h']
             action = random.choice(actions) # choose action
+            actions = ['b', 's', 'h']
 
             new_state = newState(v, cur_state, action, numDays)
 
             d = difference(gamma, actions, cur_state, numDays, action, v, weights)
-            weights = updateWeights(weights, d, cur_state)
+            weights = updateWeights(d, cur_state[0], weights, alpha)
 
             cur_state = new_state
-            if new_state[1] == len(v) - 1:
+            if new_state[1] == len(v) - 2:
                 done = True
-    return None
+    return cur_state
 
-#print(qLearn(.01, .9, .1, 10))
+print(qLearn(.01, .9, .1, 10))
 
 
 
