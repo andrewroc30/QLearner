@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import random
 
 def getLastNPrices(numDays, row, v):
     lastNPrices = np.zeros(numDays)
@@ -27,9 +26,13 @@ def pastPrices(v, numDays):
     return newV
 
 
-
 def updateWeights(difference, features, weights, alpha):
-    return  [x+y for x,y in zip(weights,[i*(alpha * difference) for i in features])]
+    # print(difference)
+    weights = [x+y for x,y in zip(weights, [i*(alpha * difference) for i in features])]
+    denom = sum(weights)
+    if denom != 0:
+        weights[:] = [x / denom for x in weights]
+    return weights
 
 
 def qState(features, weights):
@@ -46,27 +49,36 @@ def calcReward(curState, nextState):
 def difference(gamma, actions, curState, numDays, action, v, weights):
     x, index = curState
     next_state = newState(v, curState, action, numDays)
-    max = 2.2250738585072014e-308
+    max = -2.2250738585072014e308
     num_stocks = x[0]
     next_next_state = None
-    q = qState(curState[0] ,weights)
+    q = qState(curState[0], weights)
     for a in actions:
         if num_stocks != 0 and a == "s":
             next_next_state = newState(v, next_state, a, numDays)
             q_prime = qState(next_next_state[0], weights)
+            #print("Q'=", q_prime)
             if q_prime > max:
                 max = q_prime
         elif a == 'b':
             next_next_state = newState(v, next_state, a, numDays)
             q_prime = qState(next_next_state[0], weights)
+            #print("Q'=", q_prime)
             if q_prime > max:
                 max = q_prime
-        elif a == 'h':
+        else:
             next_next_state = newState(v, next_state, a, numDays)
             q_prime = qState(next_next_state[0], weights)
+            #print("Q'=", q_prime)
             if q_prime > max:
                 max = q_prime
     reward = calcReward(curState, next_state)
+    #print([reward, gamma, max, q]) q bad
+    #print(gamma, actions, curState, numDays, action, weights) weights bad
+    #print('MAX=', max)
+    #print (reward + (gamma * max))
+    #print ("Q:  ", q)
+    # print ("total:  ", (reward + (gamma * max)) - q)
     return (reward + (gamma * max)) - q
 
 
@@ -76,7 +88,7 @@ def newState(v, cur_state, action, numDays):
     account = x[1]
     num_stocks = x[0]
     if(action == "s"):
-        account  += x[-1]
+        account += x[-1]
         num_stocks -= 1
     if(action == "b"):
         account -= x[-1]
@@ -84,7 +96,21 @@ def newState(v, cur_state, action, numDays):
     return ([num_stocks,account] + (getLastNPrices(numDays,ind+1,v).tolist()) ,ind+1)
 
 
+def sortSecond(val):
+    return val[1]
 
+
+def chooseBestAction(cur_state, weights, actions, v, numDays):
+    best_action = None
+    best_actions = []
+    max = -2.2250738585072014e308
+    for a in actions:
+        next_state = newState(v, cur_state, a, numDays)
+        if ((cur_state[0][0] > 0 and a == "s") or a != 's'):
+            q_prime = qState(next_state[0], weights)
+            best_actions.append([a, q_prime])
+    best_actions.sort(key = sortSecond)
+    return best_actions
 
 
 def qLearn(alpha, gamma, epsilon, numDays):
@@ -92,7 +118,8 @@ def qLearn(alpha, gamma, epsilon, numDays):
     closing_prices = data.loc[:, "Close"]
     v = closing_prices.values
     actions = ['b', 's', 'h']
-    weights = np.ones(numDays + 2)
+    weights = np.zeros(numDays + 2)
+    weights = weights.tolist()
 
     for i in range(1, 1001):
         list = [0, 1000]
@@ -100,10 +127,16 @@ def qLearn(alpha, gamma, epsilon, numDays):
         cur_state = (betterList, 1)
         done = False
         while not done:
-            if cur_state[0][0] == 0:
-                actions = ['b', 'h']
-            action = random.choice(actions) # choose action
-            actions = ['b', 's', 'h']
+            #action = random.choice(chooseBestAction(cur_state, weights, actions, v, numDays))[0]
+
+            best_actions = chooseBestAction(cur_state, weights, actions, v, numDays)
+            axs = []
+            for a in best_actions:
+                axs.append(a[0])
+            if len(axs) == 3:
+                action = np.random.choice(axs, len(axs), p=[.15, .15, .7])[0]
+            elif len(axs) == 2:
+                action = np.random.choice(axs, len(axs), p=[.3, .7])[0]
 
             new_state = newState(v, cur_state, action, numDays)
 
@@ -113,6 +146,8 @@ def qLearn(alpha, gamma, epsilon, numDays):
             cur_state = new_state
             if new_state[1] == len(v) - 2:
                 done = True
+        if i % 10 == 0:
+            print("Episode: ", i, cur_state[0][1])
     return cur_state
 
 print(qLearn(.01, .9, .1, 10))
