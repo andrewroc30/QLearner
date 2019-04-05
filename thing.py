@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import random
 
 def getLastNPrices(numDays, row, v):
     lastNPrices = np.zeros(numDays)
@@ -27,11 +28,6 @@ def pastPrices(v, numDays):
 
 
 
-data_2011 = pd.read_csv("data/GSPC_2011.csv")
-closing_prices = data_2011.loc[:,"Close"]
-closing_prices = closing_prices.values
-
-
 def updateWeights(difference, features, weights, alpha):
     return  [x+y for x,y in zip(weights,[i*(alpha * difference) for i in features])]
 
@@ -40,21 +36,43 @@ def qState(features, weights):
     return np.dot(features, weights)
 
 
-#state: [numStocks, account, prices]
+
+#state: [(numStocks, account, prices), index]
 def calcReward(curState, nextState):
-    return ((nextState[0] * nextState[len(nextState) - 1]) + nextState[1]) - ((curState[0] * curState[len(curState) - 1]) + curState[1])
+    return ((nextState[0][0] * nextState[0][len(nextState[0]) - 1]) + nextState[0][1]) - ((curState[0][0] * curState[len(curState[0]) - 1]) + curState[0][1])
+
+state1 = ([0, 1000, 1, 1, 1], 1)
+state2 = ([1, 999, 1, 1, 5], 2)
+print(calcReward(state1, state2))
 
 
- def difference(reward, gamma, actions, curState, action, numDays, v):
-     x, index = curState
-     max = 2.2250738585072014e-308
-     account = x[1]
-     num_stocks = x[0]
-     next_state = None
-     for a in actions:
-         if x[0] != 0 and a == "s":
-             next_state = newState(v, curState, a, numDays)
-     return reward
+def difference(gamma, actions, curState, numDays, action, v, weights):
+    x, index = curState
+    next_state = newState(v, curState, action, numDays)
+    max = 2.2250738585072014e-308
+    num_stocks = x[0]
+    next_next_state = None
+    q = qState(curState[0] ,weights)
+    for a in actions:
+        if num_stocks != 0 and a == "s":
+            next_next_state = newState(v, next_state, a, numDays)
+            q_prime = qState(next_next_state[0], weights)
+            if q_prime > max:
+                max = q_prime
+        elif a == 'b':
+            next_next_state = newState(v, next_state, a, numDays)
+            q_prime = qState(next_next_state[0], weights)
+            if q_prime > max:
+                max = q_prime
+        elif a == 'h':
+            next_next_state = newState(v, next_state, a, numDays)
+            q_prime = qState(next_next_state[0], weights)
+            if q_prime > max:
+                max = q_prime
+    reward = calcReward(curState, next_state)
+    return (reward + (gamma * max)) - q
+
+
 
 def newState(v, cur_state, action, numDays):
     x,ind = cur_state
@@ -68,14 +86,44 @@ def newState(v, cur_state, action, numDays):
         num_stocks += 1
     return ([num_stocks,account] + (getLastNPrices(numDays,ind+1,v).tolist()) ,ind+1)
 
+
+
+
+
+def qLearn(alpha, gamma, epsilon, numDays):
+    data = pd.read_csv("data/GSPC_2011.csv")
+    closing_prices = data.loc[:, "Close"]
+    v = closing_prices.values
+    actions = ['b', 's', 'h']
+    weights = np.ones(numDays + 2)
+
+    for i in range(1, 1001):
+        list = [0, 1000]
+        betterList = list + (getLastNPrices(numDays, 0, v)).tolist()
+        cur_state = (betterList, 1)
+        done = False
+        while not done:
+            action = random.choice(actions) # choose action
+
+            new_state = newState(v, cur_state, action, numDays)
+
+            d = difference(gamma, actions, cur_state, numDays, action, v, weights)
+            weights = updateWeights(weights, d, cur_state)
+
+            cur_state = new_state
+            if new_state[1] == len(v) - 1:
+                done = True
+    return None
+
+#print(qLearn(.01, .9, .1, 10))
+
+
+
 #print(new_state([2,3,4,5,6,1],([0, 100, 3, 4, 5], 3),"b",3))
 #print(new_state([2,3,4,5,6,1],([0, 100, 3, 4, 5], 3),"h",3))
 #print(new_state([2,3,4,5,6,1],([0, 100, 3, 4, 5], 3),"s",3))
 
-
-
-
-
+# state: ([numStocks, account_balance, lastNprices], index)
 #state1 = ([0, 1000, 1, 1, 1], 1)
 #state2 = ([1, 999, 1, 1, 5], 2)
 #print(calcReward(state1, state2))
