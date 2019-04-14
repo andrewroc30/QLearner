@@ -33,6 +33,22 @@ def getLastNPrices(numDays, row, v):
 #         weights[:] = [x / denom for x in weights]
 #     return weights
 
+# def updateWeights(difference, features, weights, alpha):
+#     weights = [x + y for x, y in zip(weights, [i * (alpha * difference) for i in features])]
+#     max = -2.2250738585072014e308
+#     min = 2.2250738585072014e308
+#     for w in weights:
+#         if w > max:
+#             max = w
+#         elif w < min:
+#             min = w
+#     count = 0
+#     for w in weights:
+#         if w != 0:
+#             weights[count] = (w - min) / (max - min)
+#         count += 1
+#     return weights
+
 def updateWeights(difference, features, weights, alpha):
     weights = [x + y for x, y in zip(weights, [i * (alpha * difference) for i in features])]
     max = -2.2250738585072014e308
@@ -45,7 +61,7 @@ def updateWeights(difference, features, weights, alpha):
     count = 0
     for w in weights:
         if w != 0:
-            weights[count] = (w - min) / (max - min)
+            weights[count] = (2 * ((w - min) / (max - min))) - 1
         count += 1
     return weights
 
@@ -194,13 +210,15 @@ def updateBoughtPrices(new_state, bought_prices, action):
 def chooseBestAction(epsilon, best_actions):
     axs = []
     for a in best_actions:
+        #print(a)
         axs.append(a[0])
+    #print('----------')
     if len(axs) == 3:
-        return np.random.choice(axs, len(axs), p=[epsilon, (1 - epsilon) / 2, (1 - epsilon) / 2])[0]
-        # return np.random.choice(axs, len(axs), p=[(1 - epsilon)/2, (1 - epsilon)/2, epsilon])[0]
+        #return np.random.choice(axs, len(axs), p=[epsilon, (1 - epsilon) / 2, (1 - epsilon) / 2])[0]
+        return np.random.choice(axs, len(axs), p=[(1 - epsilon)/2, (1 - epsilon)/2, epsilon])[0]
     elif len(axs) == 2:
-        return np.random.choice(axs, len(axs), p=[epsilon, 1 - epsilon])[0]
-        # return np.random.choice(axs, len(axs), p=[1-epsilon, epsilon])[0]
+        #return np.random.choice(axs, len(axs), p=[epsilon, 1 - epsilon])[0]
+        return np.random.choice(axs, len(axs), p=[1-epsilon, epsilon])[0]
 
 
 def qLearn(alpha, gamma, epsilon, numDays, episodes):
@@ -214,6 +232,8 @@ def qLearn(alpha, gamma, epsilon, numDays, episodes):
     weights = np.zeros(numDays + 2)
     weights = weights.tolist()
 
+    epsilon_change = (1 - epsilon) / episodes
+
     end_states = []
     end_weights = []
     end_actions = []
@@ -223,6 +243,7 @@ def qLearn(alpha, gamma, epsilon, numDays, episodes):
         betterList = list + (getLastNPrices(numDays, 0, v)).tolist()
         cur_state = (betterList, 1)
         bought_prices = []
+        epsilon = epsilon + epsilon_change
         done = False
         while not done:
             best_actions = getActionsQStates(cur_state, weights, actions, v, numDays)
@@ -249,7 +270,7 @@ def qLearn(alpha, gamma, epsilon, numDays, episodes):
     return cur_state
 
 
-print(qLearn(.6, .1, .9, 10, 1000))
+print(qLearn(.6, .1, .9, 6, 1000))
 
 
 # state: ([numStocks, account_balance, lastNprices], index)
