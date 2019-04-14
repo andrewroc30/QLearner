@@ -26,29 +26,29 @@ def getLastNPrices(numDays, row, v):
 #     return newV
 
 
-def updateWeights(difference, features, weights, alpha):
-    weights = [x+y for x,y in zip(weights, [i*(alpha * difference) for i in features])]
-    denom = sum(weights)
-    if denom != 0:
-        weights[:] = [x / denom for x in weights]
-    return weights
-
 # def updateWeights(difference, features, weights, alpha):
-#     weights = [x + y for x, y in zip(weights, [i * (alpha * difference) for i in features])]
-#     max = -2.2250738585072014e308
-#     min = 2.2250738585072014e308
-#     for w in weights:
-#         if w > max:
-#             max = w
-#         elif w < min:
-#             min = w
-#     count = 0
-#     for w in weights:
-#         if w != 0:
-#             print(w, )
-#             weights[count] = (w - min) / (max - min)
-#         count += 1
+#     weights = [x+y for x,y in zip(weights, [i*(alpha * difference) for i in features])]
+#     denom = sum(weights)
+#     if denom != 0:
+#         weights[:] = [x / denom for x in weights]
 #     return weights
+
+def updateWeights(difference, features, weights, alpha):
+    weights = [x + y for x, y in zip(weights, [i * (alpha * difference) for i in features])]
+    max = -2.2250738585072014e308
+    min = 2.2250738585072014e308
+    for w in weights:
+        if w > max:
+            max = w
+        elif w < min:
+            min = w
+    count = 0
+    for w in weights:
+        if w != 0:
+            print(w, )
+            weights[count] = (w - min) / (max - min)
+        count += 1
+    return weights
 
 
 def qState(features, weights):

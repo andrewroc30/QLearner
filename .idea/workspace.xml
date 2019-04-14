@@ -3,8 +3,8 @@
   <component name="ChangeListManager">
     <list default="true" id="1480bb9d-826a-4e2a-8290-4ce6c3e8d90b" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/QLearner.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/thing.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/QLearner.py" beforeDir="false" afterPath="$PROJECT_DIR$/QLearner.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/QLearnerTest.py" beforeDir="false" afterPath="$PROJECT_DIR$/QLearnerTest.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -14,11 +14,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/QLearnerTest.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="319">
-              <caret line="47" column="29" selection-start-line="47" selection-start-column="29" selection-end-line="47" selection-end-column="29" />
+            <state relative-caret-position="449">
+              <caret line="251" column="32" selection-start-line="251" selection-start-column="32" selection-end-line="251" selection-end-column="32" />
               <folding>
                 <element signature="e#0#18#0" expanded="true" />
               </folding>
@@ -26,11 +26,11 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/QLearner.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-816">
-              <caret lean-forward="true" />
+            <state relative-caret-position="246">
+              <caret line="180" column="33" selection-start-line="180" selection-start-column="33" selection-end-line="180" selection-end-column="33" />
               <folding>
                 <element signature="e#0#18#0" expanded="true" />
               </folding>
@@ -59,6 +59,8 @@
       <find>newState</find>
       <find>numdays</find>
       <find>test</find>
+      <find>calcReward</find>
+      <find>chooseBestAction</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -68,8 +70,8 @@
     <option name="CHANGED_PATHS">
       <list>
         <option value="$PROJECT_DIR$/ExQLearner.py" />
-        <option value="$PROJECT_DIR$/QLearner.py" />
         <option value="$PROJECT_DIR$/thing.py" />
+        <option value="$PROJECT_DIR$/QLearner.py" />
         <option value="$PROJECT_DIR$/QLearnerTest.py" />
       </list>
     </option>
@@ -120,7 +122,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.QLearner">
+  <component name="RunManager" selected="Python.QLearnerTest">
     <configuration name="ExQLearner" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="QLearn" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -207,8 +209,8 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.QLearner" />
         <item itemvalue="Python.QLearnerTest" />
+        <item itemvalue="Python.QLearner" />
         <item itemvalue="Python.thing" />
         <item itemvalue="Python.ExQLearner" />
       </list>
@@ -231,12 +233,12 @@
     <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.11011591" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.11011591" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" />
-      <window_info anchor="bottom" id="Run" order="2" weight="0.20693392" />
+      <window_info active="true" anchor="bottom" id="Run" order="2" visible="true" weight="0.20693392" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
@@ -255,10 +257,11 @@
     <entry file="file://$PROJECT_DIR$/data/GSPC_2011.csv">
       <provider selected="true" editor-type-id="text-editor" />
     </entry>
-    <entry file="file://$PROJECT_DIR$/thing.py">
+    <entry file="file://$PROJECT_DIR$/thing.py" />
+    <entry file="file://$PROJECT_DIR$/QLearner.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="17">
-          <caret line="173" column="14" lean-forward="true" selection-start-line="173" selection-start-column="14" selection-end-line="173" selection-end-column="14" />
+        <state relative-caret-position="246">
+          <caret line="180" column="33" selection-start-line="180" selection-start-column="33" selection-end-line="180" selection-end-column="33" />
           <folding>
             <element signature="e#0#18#0" expanded="true" />
           </folding>
@@ -267,18 +270,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/QLearnerTest.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="319">
-          <caret line="47" column="29" selection-start-line="47" selection-start-column="29" selection-end-line="47" selection-end-column="29" />
-          <folding>
-            <element signature="e#0#18#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/QLearner.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-816">
-          <caret lean-forward="true" />
+        <state relative-caret-position="449">
+          <caret line="251" column="32" selection-start-line="251" selection-start-column="32" selection-end-line="251" selection-end-column="32" />
           <folding>
             <element signature="e#0#18#0" expanded="true" />
           </folding>
