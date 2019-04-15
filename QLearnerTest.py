@@ -26,6 +26,10 @@ def getLastNPrices(numDays, row, v):
 #     return newV
 
 
+def updateWeights(difference, features, weights, alpha):
+    return [x+y for x,y in zip(weights, [i*(alpha * difference) for i in features])]
+
+
 # def updateWeights(difference, features, weights, alpha):
 #     weights = [x+y for x,y in zip(weights, [i*(alpha * difference) for i in features])]
 #     denom = sum(weights)
@@ -49,21 +53,21 @@ def getLastNPrices(numDays, row, v):
 #         count += 1
 #     return weights
 
-def updateWeights(difference, features, weights, alpha):
-    weights = [x + y for x, y in zip(weights, [i * (alpha * difference) for i in features])]
-    max = -2.2250738585072014e308
-    min = 2.2250738585072014e308
-    for w in weights:
-        if w > max:
-            max = w
-        elif w < min:
-            min = w
-    count = 0
-    for w in weights:
-        if w != 0:
-            weights[count] = (2 * ((w - min) / (max - min))) - 1
-        count += 1
-    return weights
+# def updateWeights(difference, features, weights, alpha):
+#     weights = [x + y for x, y in zip(weights, [i * (alpha * difference) for i in features])]
+#     max = -2.2250738585072014e308
+#     min = 2.2250738585072014e308
+#     for w in weights:
+#         if w > max:
+#             max = w
+#         elif w < min:
+#             min = w
+#     count = 0
+#     for w in weights:
+#         if w != 0:
+#             weights[count] = (2 * ((w - min) / (max - min))) - 1
+#         count += 1
+#     return weights
 
 
 def qState(features, weights):
@@ -71,24 +75,14 @@ def qState(features, weights):
 
 
 # state: [(numStocks, account, prices), index]
-#def calcReward(curState, nextState):
-#    return ((nextState[0][0] * nextState[0][len(nextState[0]) - 1]) + nextState[0][1]) \
-#           - ((curState[0][0] * curState[0][len(curState[0]) - 1]) + curState[0][1])
-
-
-# def calcReward(curState, nextState):
-#     return (nextState[0][0] * nextState[0][len(nextState[0]) - 1]) \
-#            - (curState[0][0] * curState[0][len(curState[0]) - 1])
 
 
 def calcReward(action, nextState, bought_prices):
     if action == 'h':
-        return 0
+        return -1
     elif action == 's':
-        if len(bought_prices) == 0:
-            return -1 # this should never happen
         return (nextState[0][-1] - bought_prices[-1])
-    else: #action is buying
+    elif action == 'b':
         if len(bought_prices) == 0:
             return 1
         return nextState[0][-1] - bought_prices[-1]
@@ -117,6 +111,7 @@ def difference(gamma, actions, curState, numDays, action, v, weights, bought_pri
             if q_prime > max:
                 max = q_prime
     reward = calcReward(action, next_state, bought_prices)
+    print(reward, gamma, max, q)
     return (reward + (gamma * max)) - q
 
 
@@ -197,6 +192,8 @@ def plotChoices(v, choices):
         elif choices[count] == 'h':
             plt.scatter(count, i, c='blue')
         count += 1
+    plt.xlabel('day')
+    plt.ylabel('stock price')
     plt.show()
 
 
@@ -249,7 +246,6 @@ def qLearn(alpha, gamma, epsilon, numDays, episodes):
             best_actions = getActionsQStates(cur_state, weights, actions, v, numDays)
             action = chooseBestAction(epsilon, best_actions)
             new_state = newState(v, cur_state, action, numDays)
-            updateBoughtPrices(new_state, bought_prices, action)
 
             if i == episodes:
                 end_actions.append(action)
@@ -257,6 +253,7 @@ def qLearn(alpha, gamma, epsilon, numDays, episodes):
             d = difference(gamma, actions, cur_state, numDays, action, v, weights, bought_prices)
             weights = updateWeights(d, cur_state[0], weights, alpha)
 
+            updateBoughtPrices(new_state, bought_prices, action)
             cur_state = new_state
             if new_state[1] == len(v) - 2:
                 done = True
@@ -264,13 +261,14 @@ def qLearn(alpha, gamma, epsilon, numDays, episodes):
             print("Episode: ", i, cur_state[0][1])
         end_states.append(cur_state)
         end_weights.append(weights)
+        print(end_weights)
     plotChoices(v, end_actions)
     plotBalances(end_states)
     plotWeights(end_weights, episodes)
     return cur_state
 
 
-print(qLearn(.6, .1, .9, 6, 1000))
+print(qLearn(.00000001, .1, .9, 1, 1000))
 
 
 # state: ([numStocks, account_balance, lastNprices], index)
