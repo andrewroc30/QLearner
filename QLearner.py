@@ -26,6 +26,10 @@ def getLastNPrices(numDays, row, v):
 #     return newV
 
 
+def updateWeights(difference, features, weights, alpha):
+    return [x+y for x,y in zip(weights, [i*(alpha * difference) for i in features])]
+
+
 # def updateWeights(difference, features, weights, alpha):
 #     weights = [x+y for x,y in zip(weights, [i*(alpha * difference) for i in features])]
 #     denom = sum(weights)
@@ -33,22 +37,37 @@ def getLastNPrices(numDays, row, v):
 #         weights[:] = [x / denom for x in weights]
 #     return weights
 
-def updateWeights(difference, features, weights, alpha):
-    weights = [x + y for x, y in zip(weights, [i * (alpha * difference) for i in features])]
-    max = -2.2250738585072014e308
-    min = 2.2250738585072014e308
-    for w in weights:
-        if w > max:
-            max = w
-        elif w < min:
-            min = w
-    count = 0
-    for w in weights:
-        if w != 0:
-            print(w, )
-            weights[count] = (w - min) / (max - min)
-        count += 1
-    return weights
+# def updateWeights(difference, features, weights, alpha):
+#     weights = [x + y for x, y in zip(weights, [i * (alpha * difference) for i in features])]
+#     max = -2.2250738585072014e308
+#     min = 2.2250738585072014e308
+#     for w in weights:
+#         if w > max:
+#             max = w
+#         elif w < min:
+#             min = w
+#     count = 0
+#     for w in weights:
+#         if w != 0:
+#             weights[count] = (w - min) / (max - min)
+#         count += 1
+#     return weights
+
+# def updateWeights(difference, features, weights, alpha):
+#     weights = [x + y for x, y in zip(weights, [i * (alpha * difference) for i in features])]
+#     max = -2.2250738585072014e308
+#     min = 2.2250738585072014e308
+#     for w in weights:
+#         if w > max:
+#             max = w
+#         elif w < min:
+#             min = w
+#     count = 0
+#     for w in weights:
+#         if w != 0:
+#             weights[count] = (2 * ((w - min) / (max - min))) - 1
+#         count += 1
+#     return weights
 
 
 def qState(features, weights):
@@ -56,22 +75,24 @@ def qState(features, weights):
 
 
 # state: [(numStocks, account, prices), index]
-#def calcReward(curState, nextState):
-#    return ((nextState[0][0] * nextState[0][len(nextState[0]) - 1]) + nextState[0][1]) \
-#           - ((curState[0][0] * curState[0][len(curState[0]) - 1]) + curState[0][1])
 
 
-def calcReward(curState, nextState):
-    return (nextState[0][0] * nextState[0][len(nextState[0]) - 1]) \
-           - (curState[0][0] * curState[0][len(curState[0]) - 1])
+def calcReward(action, nextState, bought_prices):
+    if action == 'h':
+        return -5
+    elif action == 's':
+        return (nextState[0][-1] - bought_prices[-1])
+    elif action == 'b':
+        if len(bought_prices) == 0:
+            return 5
+        return nextState[0][-1] - bought_prices[-1]
 
 
-def difference(gamma, actions, curState, numDays, action, v, weights):
+def difference(gamma, actions, curState, numDays, action, v, weights, bought_prices):
     x, index = curState
     next_state = newState(v, curState, action, numDays)
     max = -2.2250738585072014e308
     num_stocks = x[0]
-    next_next_state = None
     q = qState(curState[0], weights)
     for a in actions:
         if num_stocks != 0 and a == "s":
@@ -89,7 +110,8 @@ def difference(gamma, actions, curState, numDays, action, v, weights):
             q_prime = qState(next_next_state[0], weights)
             if q_prime > max:
                 max = q_prime
-    reward = calcReward(curState, next_state)
+    reward = calcReward(action, next_state, bought_prices)
+    # print(reward, gamma, max, q)
     return (reward + (gamma * max)) - q
 
 
@@ -110,9 +132,8 @@ def sortSecond(val):
     return val[1]
 
 
-def chooseBestAction(cur_state, weights, actions, v, numDays):
+def getActionsQStates(cur_state, weights, actions, v, numDays):
     best_actions = []
-    max = -2.2250738585072014e308
     for a in actions:
         next_state = newState(v, cur_state, a, numDays)
         if ((cur_state[0][0] > 0 and a == "s") or a != 's'):
@@ -145,8 +166,11 @@ def plotWeights(weights, episodes):
         for j in range(len(weights)):
             temp.append(weights[j][i])
         all_weights.append(temp)
+    print(len(all_weights))
+    print(len(all_weights[0]))
     for i in range(episodes):
         x.append(i)
+    print(len(x))
     count = 0
     for w in all_weights:
         plt.plot(x, w, label=count)
@@ -171,7 +195,30 @@ def plotChoices(v, choices):
         elif choices[count] == 'h':
             plt.scatter(count, i, c='blue')
         count += 1
+    plt.xlabel('day')
+    plt.ylabel('stock price')
     plt.show()
+
+
+def updateBoughtPrices(new_state, bought_prices, action):
+    if action == 'b':
+        bought_prices.append(new_state[0][-1])
+    elif action == 's':
+        bought_prices.pop()
+
+
+def chooseBestAction(epsilon, best_actions):
+    axs = []
+    for a in best_actions:
+        #print(a)
+        axs.append(a[0])
+    #print('----------')
+    if len(axs) == 3:
+        #return np.random.choice(axs, len(axs), p=[epsilon, (1 - epsilon) / 2, (1 - epsilon) / 2])[0]
+        return np.random.choice(axs, len(axs), p=[(1 - epsilon)/2, (1 - epsilon)/2, epsilon])[0]
+    elif len(axs) == 2:
+        #return np.random.choice(axs, len(axs), p=[epsilon, 1 - epsilon])[0]
+        return np.random.choice(axs, len(axs), p=[1-epsilon, epsilon])[0]
 
 
 def qLearn(alpha, gamma, epsilon, numDays, episodes):
@@ -185,6 +232,8 @@ def qLearn(alpha, gamma, epsilon, numDays, episodes):
     weights = np.zeros(numDays + 2)
     weights = weights.tolist()
 
+    epsilon_change = (1 - epsilon) / episodes
+
     end_states = []
     end_weights = []
     end_actions = []
@@ -193,27 +242,21 @@ def qLearn(alpha, gamma, epsilon, numDays, episodes):
         list = [0, 10000]
         betterList = list + (getLastNPrices(numDays, 0, v)).tolist()
         cur_state = (betterList, 1)
+        bought_prices = []
+        epsilon = epsilon + epsilon_change
         done = False
         while not done:
-            best_actions = chooseBestAction(cur_state, weights, actions, v, numDays)
-            axs = []
-            for a in best_actions:
-                axs.append(a[0])
-            if len(axs) == 3:
-                #action = np.random.choice(axs, len(axs), p=[epsilon, (1 - epsilon)/2, (1 - epsilon)/2])[0]
-                action = np.random.choice(axs, len(axs), p=[(1 - epsilon)/2, (1 - epsilon)/2, epsilon])[0]
-            elif len(axs) == 2:
-                #action = np.random.choice(axs, len(axs), p=[epsilon, 1-epsilon])[0]
-                action = np.random.choice(axs, len(axs), p=[1-epsilon, epsilon])[0]
-
+            best_actions = getActionsQStates(cur_state, weights, actions, v, numDays)
+            action = chooseBestAction(epsilon, best_actions)
             new_state = newState(v, cur_state, action, numDays)
 
             if i == episodes:
                 end_actions.append(action)
 
-            d = difference(gamma, actions, cur_state, numDays, action, v, weights)
+            d = difference(gamma, actions, cur_state, numDays, action, v, weights, bought_prices)
             weights = updateWeights(d, cur_state[0], weights, alpha)
 
+            updateBoughtPrices(new_state, bought_prices, action)
             cur_state = new_state
             if new_state[1] == len(v) - 2:
                 done = True
@@ -227,7 +270,7 @@ def qLearn(alpha, gamma, epsilon, numDays, episodes):
     return cur_state
 
 
-print(qLearn(.6, .1, .9, 10, 100))
+print(qLearn(.00000001, .1, .9, 5, 10))
 
 
 # state: ([numStocks, account_balance, lastNprices], index)

@@ -3,20 +3,40 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 
-def getLastNPrices(numDays, row, v):
+# def getLastNPrices(numDays, row, v):
+#     lastNPrices = np.zeros(numDays)
+#     if row >= numDays:
+#         for i in range(numDays):
+#             lastNPrices[i] = v[row - numDays + i + 1]
+#     else:
+#         avg = 0
+#         for val in v:
+#             avg = avg + val
+#         avg = avg / len(v)
+#         for i in range(numDays):
+#             lastNPrices[i] = avg
+#     lastNPrices[-1] = v[row]
+#     return lastNPrices
+
+
+def getLastNPrices(numDays, row, pricesData):
     lastNPrices = np.zeros(numDays)
-    if row >= numDays:
-        for i in range(numDays):
-            lastNPrices[i] = v[row - numDays + i + 1]
-    else:
-        avg = 0
-        for val in v:
-            avg = avg + val
-        avg = avg / len(v)
-        for i in range(numDays):
+    avg = 0
+    # calculate avg only if we need it
+    if (numDays == 1):
+        return [pricesData[row]]
+    if (row == 0):
+        return [i + pricesData[0] for i in lastNPrices]
+    if (row <= numDays):
+        for j in range(row):
+            avg = pricesData[j] + avg
+        avg = avg / row
+    for i in range(numDays):
+        if (row - numDays + i + 1 >= 0):
+            lastNPrices[i] = pricesData[row - numDays + i + 1]
+        else:
             lastNPrices[i] = avg
-    lastNPrices[-1] = v[row]
-    return lastNPrices
+    return lastNPrices.tolist()
 
 
 # def pastPrices(v, numDays):
@@ -77,15 +97,21 @@ def qState(features, weights):
 # state: [(numStocks, account, prices), index]
 
 
-def calcReward(action, nextState, bought_prices):
-    if action == 'h':
-        return -1
-    elif action == 's':
-        return (nextState[0][-1] - bought_prices[-1])
-    elif action == 'b':
-        if len(bought_prices) == 0:
-            return 1
-        return nextState[0][-1] - bought_prices[-1]
+# def calcReward(action, nextState, bought_prices):
+#     if action == 'h':
+#         return -1
+#     elif action == 's':
+#         return (nextState[0][-1] - bought_prices[-1])
+#     elif action == 'b':
+#         if len(bought_prices) == 0:
+#             return 1
+#         return nextState[0][-1] - bought_prices[-1]
+
+
+def calcReward(action, nextPrice, numDays, v, cur_state):
+    nextState = newState(action, nextPrice)
+    nextState = newState(v, cur_state, action, numDays)
+    return ((nextState.account + numDays * nextPrice) - 10000)/10000
 
 
 def difference(gamma, actions, curState, numDays, action, v, weights, bought_prices):
@@ -111,7 +137,7 @@ def difference(gamma, actions, curState, numDays, action, v, weights, bought_pri
             if q_prime > max:
                 max = q_prime
     reward = calcReward(action, next_state, bought_prices)
-    print(reward, gamma, max, q)
+    # print(reward, gamma, max, q)
     return (reward + (gamma * max)) - q
 
 
@@ -125,20 +151,22 @@ def newState(v, cur_state, action, numDays):
     if(action == "b"):
         account -= x[-1]
         num_stocks += 1
-    return ([num_stocks,account] + (getLastNPrices(numDays,ind+1,v).tolist()) ,ind+1)
+    return ([num_stocks,account] + getLastNPrices(numDays,ind+1,v), ind+1)
 
 
 def sortSecond(val):
     return val[1]
 
 
-def getActionsQStates(cur_state, weights, actions, v, numDays):
+def getActionsQStates(cur_state, weights, actions, v, numDays, bought_prices):
     best_actions = []
     for a in actions:
         next_state = newState(v, cur_state, a, numDays)
         if ((cur_state[0][0] > 0 and a == "s") or a != 's'):
             q_prime = qState(next_state[0], weights)
             best_actions.append([a, q_prime])
+            # reward = calcReward(a, next_state, bought_prices)
+            # best_actions.append([a, reward])
     best_actions.sort(key = sortSecond)
     return best_actions
 
@@ -166,8 +194,11 @@ def plotWeights(weights, episodes):
         for j in range(len(weights)):
             temp.append(weights[j][i])
         all_weights.append(temp)
+    print(len(all_weights))
+    print(len(all_weights[0]))
     for i in range(episodes):
         x.append(i)
+    print(len(x))
     count = 0
     for w in all_weights:
         plt.plot(x, w, label=count)
@@ -209,7 +240,6 @@ def chooseBestAction(epsilon, best_actions):
     for a in best_actions:
         #print(a)
         axs.append(a[0])
-    #print('----------')
     if len(axs) == 3:
         #return np.random.choice(axs, len(axs), p=[epsilon, (1 - epsilon) / 2, (1 - epsilon) / 2])[0]
         return np.random.choice(axs, len(axs), p=[(1 - epsilon)/2, (1 - epsilon)/2, epsilon])[0]
@@ -237,13 +267,15 @@ def qLearn(alpha, gamma, epsilon, numDays, episodes):
 
     for i in range(1, episodes+1):
         list = [0, 10000]
-        betterList = list + (getLastNPrices(numDays, 0, v)).tolist()
+        betterList = list + getLastNPrices(numDays, 0, v)
         cur_state = (betterList, 1)
         bought_prices = []
         epsilon = epsilon + epsilon_change
+        # print('Episode: ', i)
+        # print('------------------------------------------------')
         done = False
         while not done:
-            best_actions = getActionsQStates(cur_state, weights, actions, v, numDays)
+            best_actions = getActionsQStates(cur_state, weights, actions, v, numDays, bought_prices)
             action = chooseBestAction(epsilon, best_actions)
             new_state = newState(v, cur_state, action, numDays)
 
@@ -261,14 +293,13 @@ def qLearn(alpha, gamma, epsilon, numDays, episodes):
             print("Episode: ", i, cur_state[0][1])
         end_states.append(cur_state)
         end_weights.append(weights)
-        print(end_weights)
     plotChoices(v, end_actions)
     plotBalances(end_states)
     plotWeights(end_weights, episodes)
     return cur_state
 
 
-print(qLearn(.00000001, .1, .9, 1, 1000))
+print(qLearn(.00000001, .1, .9, 5, 10))
 
 
 # state: ([numStocks, account_balance, lastNprices], index)
